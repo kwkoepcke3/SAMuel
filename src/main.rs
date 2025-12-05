@@ -54,11 +54,17 @@ struct AchievementsArgs {
     command: AchievementsArgsSub,
 }
 
+#[derive(Args, Debug)]
+struct AchievementsResetAllArgs {
+    game_id: String,
+}
+
 #[derive(Subcommand, Debug)]
 enum AchievementsArgsSub {
     List(AchievementsListArgs),
     Trigger(AchievementsTriggerArgs),
     Clear(AchievementsClearArgs),
+    ResetAll(AchievementsResetAllArgs),
 }
 
 #[derive(Args, Debug)]
@@ -194,6 +200,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 &achievements_trigger_args.game_id.parse().unwrap(),
                 achievements_trigger_args.achievement_id,
             ),
+            AchievementsArgsSub::ResetAll(achievements_clear_all_args) => {
+                let AchievementsResetAllArgs { game_id } = achievements_clear_all_args;
+                let appid = &game_id.parse().unwrap();
+                let achievements = steam::get_achievements(&appid).await;
+                for achievement in achievements {
+                    steam::clear_achievement(&appid, achievement.achievement_id)
+                }
+            }
         },
         CliCommandsSub::UpdateCache => {
             fetch::get_owned_games_direct(&api_key, &steam_id, &cache_path).await?;
